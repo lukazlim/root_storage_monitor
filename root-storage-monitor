@@ -1,0 +1,32 @@
+#!/bin/sh
+
+SCRIPT_PATH="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )";
+
+if [ "$1" = "install" ]; then
+	if [ -f "$HOME/bin/root-storage-monitor" ]; then
+		echo "Binary has already been installed, skipping..."
+	else
+		cp $SCRIPT_PATH/root-storage-monitor $HOME/bin
+		echo "Successfully installed into $HOME/bin"
+	fi
+
+	exit
+fi
+
+echo "Displaying available storage space of rootfs $(df / | tail -1 | awk '{print $1}') every 5 seconds"
+echo "Press Ctrl+C to stop"
+
+while :
+do
+	AVAILABLE=$(df / | tail -1 | awk '{print $4}')
+
+	if [ ! -z $AVAILABLE_OLD ]; then
+		AVAILABLE_DIFF=$((AVAILABLE - AVAILABLE_OLD))
+		[ $AVAILABLE_DIFF -gt 0 ] && AVAILABLE_DIFF="+$AVAILABLE_DIFF"
+	fi
+
+	echo "[$(date +%T)] $AVAILABLE ($(df -h / | tail -1 | awk '{print $4}')) $([ ! -z $AVAILABLE_DIFF ] && echo "($AVAILABLE_DIFF) " )($(df / | tail -1 | awk '{print $5}') Used)"
+	sleep 5
+
+	AVAILABLE_OLD=$AVAILABLE
+done
